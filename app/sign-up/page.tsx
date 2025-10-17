@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { signUp } from "@/lib/auth-client";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
@@ -125,6 +126,7 @@ export default function SignUpPage() {
                                 )}
                             />
 
+  
                             <FormField
                                 control={form.control}
                                 name="password"

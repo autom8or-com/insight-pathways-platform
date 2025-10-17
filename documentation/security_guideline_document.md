@@ -1,116 +1,125 @@
-# Security Guidelines for codeguide-starter
+# Security Guidelines for the Blackcod Group Insight Quizzing Platform
 
-This document defines mandatory security principles and implementation best practices tailored to the **codeguide-starter** repository. It aligns with Security-by-Design, Least Privilege, Defense-in-Depth, and other core security tenets. All sections reference specific areas of the codebase (e.g., `/app/api/auth/route.ts`, CSS files, environment configuration) to ensure practical guidance.
+This document defines the security principles, controls, and best practices that must be embedded throughout the design, implementation, and operation of the Insight Quizzing Platform MVP. Adherence to these guidelines ensures a robust, resilient, and trustworthy application.
 
 ---
 
-## 1. Security by Design
+## 1. Security by Design & Architecture
 
-• Embed security from day one: review threat models whenever adding new features (e.g., new API routes, data fetching).
-• Apply “secure defaults” in Next.js configuration (`next.config.js`), enabling strict mode and disabling debug flags in production builds.
-• Maintain a security checklist in your PR template to confirm that each change has been reviewed against this guideline.
+- **Threat Modeling**: Early in design, identify and document potential threats (e.g., unauthorized data access, injection attacks, CSRF). Update regularly as features evolve.
+- **Least Privilege**: Grant each service, database user, and API endpoint only the minimal permissions required. For example, the CSV‐upload function should only have read/write access to a dedicated staging schema.
+- **Defense in Depth**: Layer controls across the stack:
+  - Network: VPC segmentation, firewall rules limiting database access to application servers.
+  - Application: Authentication & authorization checks, input validation, output encoding.
+  - Data: Encryption at rest and in transit, secure key management.
 
 ---
 
 ## 2. Authentication & Access Control
 
-### 2.1 Password Storage
-- Use **bcrypt** (or Argon2) with a per-user salt to hash passwords in `/app/api/auth/route.ts`.
-- Enforce a strong password policy on both client and server: minimum 12 characters, mixed case, numbers, and symbols.
-
-### 2.2 Session Management
-- Issue sessions via Secure, HttpOnly, SameSite=strict cookies. Do **not** expose tokens to JavaScript.
-- Implement absolute and idle timeouts. For example, invalidate sessions after 30 minutes of inactivity.
-- Protect against session fixation by regenerating session IDs after authentication.
-
-### 2.3 Brute-Force & Rate Limiting
-- Apply rate limiting at the API layer (e.g., using `express-rate-limit` or Next.js middleware) on `/api/auth` to throttle repeated login attempts.
-- Introduce exponential backoff or temporary lockout after N failed attempts.
-
-### 2.4 Role-Based Access Control (Future)
-- Define user roles in your database model (e.g., `role = 'user' | 'admin'`).
-- Enforce server-side authorization checks in every protected route (e.g., in `dashboard/layout.tsx` loader functions).
+- **Strong Authentication**:
+  - Use Better Auth integrated with Drizzle ORM + PostgreSQL.
+  - Enforce complex password policies (minimum length ≥12, mixed character classes, rotation).
+  - Store passwords with Argon2 or bcrypt + unique salt per user.
+- **Session Management & JWT**:
+  - Issue JWTs signed with a secure algorithm (HS256 or RS256); never use “none.”
+  - Validate `exp`, `iat`, and `aud` on every request.
+  - Store tokens in secure, HttpOnly, Secure, SameSite-strict cookies.
+  - Implement idle and absolute session timeouts; provide server-side logout invalidation.
+- **Role‐Based Access Control (RBAC)**:
+  - Define roles: Admin, Manager, Executive, Respondent.
+  - Extend user schema in `lib/auth.ts` to include roles and permissions.
+  - Enforce server-side checks (e.g., Next.js middleware) on every protected route and API endpoint.
+- **Multi-Factor Authentication (MFA)**:
+  - Require MFA (TOTP or SMS) for Admin and Executive logins, and optionally for Managers.
 
 ---
 
-## 3. Input Handling & Processing
+## 3. Input Validation & Output Encoding
 
-### 3.1 Validate & Sanitize All Inputs
-- On **client** (`sign-up/page.tsx`, `sign-in/page.tsx`): perform basic format checks (email regex, password length).
-- On **server** (`/app/api/auth/route.ts`): re-validate inputs with a schema validator (e.g., `zod`, `Joi`).
-- Reject or sanitize any unexpected fields to prevent injection attacks.
-
-### 3.2 Prevent Injection
-- If you introduce a database later, always use parameterized queries or an ORM (e.g., Prisma) rather than string concatenation.
-- Avoid dynamic `eval()` or template rendering with unsanitized user input.
-
-### 3.3 Safe Redirects
-- When redirecting after login or logout, validate the target against an allow-list to prevent open redirects.
+- **Server-Side Validation**:
+  - Never rely solely on client-side checks; revalidate on the backend.
+  - Use schema validation libraries (e.g., Zod) for JSON payloads.
+- **Prevent Injection Attacks**:
+  - Always use Drizzle ORM’s parameterized queries—never string-concatenate SQL.
+  - For CSV uploads, restrict file extensions to `.csv`, validate MIME type, file size (e.g., ≤5 MB), and parse with a hardened CSV parser.
+- **XSS & Template Injection**:
+  - Escape and HTML-encode user-supplied quiz content when rendering.
+  - Employ a strict Content Security Policy (CSP) that disallows inline scripts and only allows trusted script origins.
+- **Redirect & URL Whitelisting**:
+  - Validate redirect targets against an allow-list of internal routes to prevent open-redirect attacks.
 
 ---
 
 ## 4. Data Protection & Privacy
 
-### 4.1 Encryption & Secrets
-- Enforce HTTPS/TLS 1.2+ for all front-end ↔ back-end communications.
-- Never commit secrets—use environment variables and a secrets manager (e.g., AWS Secrets Manager, Vault).
-
-### 4.2 Sensitive Data Handling
-- Do ​not​ log raw passwords, tokens, or PII in server logs. Mask or redact any user identifiers.
-- If storing PII in `data.json` or a future database, classify it and apply data retention policies.
-
----
-
-## 5. API & Service Security
-
-### 5.1 HTTPS Enforcement
-- In production, redirect all HTTP traffic to HTTPS (e.g., via Vercel’s redirect rules or custom middleware).
-
-### 5.2 CORS
-- Configure `next.config.js` or API middleware to allow **only** your front-end origin (e.g., `https://your-domain.com`).
-
-### 5.3 API Versioning & Minimal Exposure
-- Version your API routes (e.g., `/api/v1/auth`) to handle future changes without breaking clients.
-- Return only necessary fields in JSON responses; avoid leaking internal server paths or stack traces.
+- **Encryption in Transit & At Rest**:
+  - Enforce HTTPS (TLS 1.2+). Redirect all HTTP traffic to HTTPS.
+  - Use PostgreSQL’s built-in encryption (e.g., `pgcrypto`) or disk-level AES-256 encryption for backups.
+- **Secrets Management**:
+  - Store API keys, database credentials, and JWT signing keys in a secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault). Do not hard-code in code or environment files.
+- **PII Handling & Compliance**:
+  - Classify PII (user names, emails, IPs). Mask or redact in logs and UIs when not required.
+  - Implement data-deletion workflows to comply with GDPR/CCPA erase and portability requests.
+- **Error Handling & Logging**:
+  - Do not expose stack traces or sensitive details in API responses.
+  - Log at INFO/WARN/ERROR levels; redact sensitive fields.
+  - Centralize logs in a secure, write-only system and monitor for anomalies.
 
 ---
 
-## 6. Web Application Security Hygiene
+## 5. API & Web Application Security
 
-### 6.1 CSRF Protection
-- Use anti-CSRF tokens for any state-changing API calls. Integrate Next.js CSRF middleware or implement synchronizer tokens stored in cookies.
-
-### 6.2 Security Headers
-- In `next.config.js` (or a custom server), add these headers:
-  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+- **Rate Limiting & Throttling**:
+  - Enforce per-IP and per-account rate limits on login, quiz submissions, and CSV upload endpoints.
+- **CORS & CSRF**:
+  - Restrict CORS to known origins (e.g., `https://app.blackcodgroup.com`).
+  - Protect all state-changing endpoints (POST/PUT/DELETE) with anti-CSRF tokens.
+- **Security Headers**:
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
   - `X-Content-Type-Options: nosniff`
   - `X-Frame-Options: DENY`
-  - `Referrer-Policy: no-referrer-when-downgrade`
-  - `Content-Security-Policy`: restrict script/style/src to self and trusted CDNs.
-
-### 6.3 Secure Cookies
-- Set `Secure`, `HttpOnly`, `SameSite=Strict` on all cookies. Avoid storing sensitive data in `localStorage`.
-
-### 6.4 Prevent XSS
-- Escape or encode all user-supplied data in React templates. Avoid `dangerouslySetInnerHTML` unless content is sanitized.
+  - `Referrer-Policy: same-origin`
+  - `Content-Security-Policy` as noted above.
+- **Secure Cookie Attributes**:
+  - `HttpOnly`, `Secure`, and `SameSite=Strict` on session/auth cookies.
 
 ---
 
-## 7. Infrastructure & Configuration Management
+## 6. Infrastructure & CI/CD Hardening
 
-- Harden your hosting environment (e.g., Vercel/Netlify) by disabling unnecessary endpoints (GraphQL/GraphiQL playgrounds in production).
-- Rotate secrets and API keys regularly via your secrets manager.
-- Maintain minimal privileges: e.g., database accounts should only have read/write on required tables.
-- Keep Node.js, Next.js, and all system packages up to date.
-
----
-
-## 8. Dependency Management
-
-- Commit and maintain `package-lock.json` to guarantee reproducible builds.
-- Integrate a vulnerability scanner (e.g., GitHub Dependabot, Snyk) to monitor and alert on CVEs in dependencies.
-- Trim unused packages; each added library increases the attack surface.
+- **Server & Network Hardening**:
+  - Disable unused ports and services on application servers.
+  - Enforce centralized patch management; apply OS and dependency updates regularly.
+  - Use container-scanning tools to detect vulnerable base images.
+- **CI/CD Pipeline Security**:
+  - Store secrets in pipeline vaults, not in plaintext.
+  - Integrate SCA tools (e.g., Dependabot, Snyk) to scan for vulnerable dependencies on every pull request.
+  - Require successful unit, integration, and end-to-end test passes before merging/deployment.
+  - Enforce branch protection rules and peer code review.
 
 ---
 
-Adherence to these guidelines will ensure that **codeguide-starter** remains secure, maintainable, and resilient as it evolves. Regularly review and update this document to reflect new threats and best practices.
+## 7. Dependency & Supply Chain Management
+
+- **Lockfiles & Pinning**:
+  - Commit `package-lock.json` or `yarn.lock` to ensure reproducible builds.
+- **Vulnerability Scanning**:
+  - Automate CVE scanning in CI (e.g., OWASP Dependency-Check).
+- **Minimize Third-Party Footprint**:
+  - Only include libraries actively maintained with a healthy security track record.
+
+---
+
+## 8. Continuous Monitoring & Incident Response
+
+- **Monitoring & Alerting**:
+  - Instrument application and infrastructure with logs, metrics, and distributed tracing.
+  - Alert on unusual behaviors (e.g., high error rates, spikes in failed logins).
+- **Incident Response Plan**:
+  - Document roles, escalation paths, and recovery procedures for security incidents.
+  - Conduct regular tabletop exercises and post-mortems.
+
+---
+
+Adherence to these guidelines will ensure the Insight Quizzing Platform meets stringent security, privacy, and compliance standards while delivering a reliable, user-centric experience. Regular audits and reviews should be scheduled to validate ongoing compliance and to address emerging threats.

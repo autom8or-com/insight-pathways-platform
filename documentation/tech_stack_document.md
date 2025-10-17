@@ -1,90 +1,92 @@
 # Tech Stack Document
 
-This document explains the key technologies chosen for the **codeguide-starter** project. It’s written in everyday language so anyone—technical or not—can understand why each tool was picked and how it supports the application.
+This document outlines the technology choices made for the **Blackcod Group Insight Quizzing Platform MVP**. It explains, in everyday language, why each tool or framework was selected and how it contributes to a smooth, reliable experience for both users and developers.
 
-## 1. Frontend Technologies
-The frontend is everything the user sees and interacts with. For this project, we’ve used:
+## Frontend Technologies
 
 - **Next.js (App Router)**
-  - A React framework that makes page routing, server-side rendering, and API routes very simple.
-  - Enhances user experience by pre-rendering pages on the server or at build time, leading to faster initial load.
-- **React 18**
-  - The underlying library for building user interfaces with reusable components.
-  - Provides a smooth, interactive experience thanks to its virtual DOM and modern hooks.
+  - Provides the structure for building fast web pages that can render both on the server and in the browser. This helps quizzes and analytics load quickly and feel snappy.
+- **React**
+  - Powers the interactive parts of the app (forms, buttons, charts). React makes it easy to update the screen when data changes (for example, showing live quiz results).
 - **TypeScript**
-  - A superset of JavaScript that adds types (labels for data).
-  - Helps catch errors early during development and makes the code easier to maintain.
-- **CSS (globals.css & theme.css)**
-  - **globals.css** applies base styles (fonts, colors, resets) across the entire app.
-  - **dashboard/theme.css** defines the look and feel specific to the dashboard area.
-  - This separation keeps styles organized and avoids accidental style conflicts.
+  - Adds simple checks to our code so we catch mistakes early (like typos or mismatched data). This leads to fewer bugs and more confidence when making changes.
+- **Tailwind CSS**
+  - A utility-first styling tool that lets us build beautiful, consistent interfaces quickly. We can apply colors, spacing, and typography without writing custom CSS for every component.
+- **shadcn/ui**
+  - A ready-made library of accessible components (forms, tables, modals, charts) that match our design goals. It ensures we meet basic accessibility standards (WCAG 2.1 AA) out of the box.
+- **CSS Variables & Theming**
+  - Allow us to switch between light, dark, and system themes effortlessly, ensuring the platform can adopt Blackcod Group’s branding (colors, fonts, logos) in a single configuration.
+- **Chart Library (e.g., Recharts)**
+  - Used to build line graphs and other visualizations for the “Insight Pathways” feature, giving managers and executives clear, interactive insights over time.
 
-By combining these tools, we have a clear structure (Next.js folders for pages and layouts), safer code (TypeScript), and flexible styling with vanilla CSS.
+These combined tools create a polished, responsive user interface that works across devices and loads key features (quizzes, dashboards) in under 3 seconds.
 
-## 2. Backend Technologies
-The backend handles data, user accounts, and the logic behind the scenes. Our choices here are:
+## Backend Technologies
 
-- **Next.js API Routes**
-  - Allows us to write server-side code (`route.ts` files) alongside our frontend in the same project.
-  - Runs on Node.js, so we can handle requests like sign-up, sign-in, and data fetching in one place.
+- **Better Auth**
+  - Handles user sign-up, sign-in, password resets, and security out of the box. Provides a foundation for adding user roles (Manager, Respondent, Executive, Admin).
+- **Drizzle ORM**
+  - A lightweight way to talk to our database using JavaScript/TypeScript. It maps tables and rows to objects in our code, making data operations straightforward and type-safe.
+- **PostgreSQL**
+  - A reliable, open-source database that stores all quiz definitions, user data, responses, assignments, and roles. It scales well as we add more quizzes and users.
+- **Next.js API Routes (Serverless Functions)**
+  - Let us write backend logic (create quizzes, assign surveys, calculate analytics) alongside the frontend code. These functions run on demand, keeping our infrastructure simple and cost-effective.
 - **Node.js Runtime**
-  - The JavaScript environment on the server that executes our API routes.
-- **bcrypt** (npm package)
-  - A library for hashing passwords securely before storing them.
-  - Ensures that even if someone got access to our data, raw passwords aren’t visible.
-- **(Optional) NextAuth.js or JWT**
-  - While this starter kit shows a custom authentication flow, it can easily integrate services like NextAuth.js for email-based login or JWT (JSON Web Tokens) for stateless sessions.
+  - Executes our server code (Better Auth hooks, Drizzle queries, business logic) in a familiar JavaScript environment.
 
-These components work together to receive user credentials, verify or store them securely, manage sessions or tokens, and deliver protected data back to the frontend.
+Together, these pieces ensure data flows securely between users’ browsers and our database, supporting all content management, quiz delivery, and analytics calculations.
 
-## 3. Infrastructure and Deployment
-Infrastructure covers where and how we host the app, as well as how changes get delivered:
+## Infrastructure and Deployment
 
-- **Git & GitHub**
-  - Version control system (Git) and remote hosting (GitHub) keep track of all code changes and allow team collaboration.
-- **Vercel (or Netlify)**
-  - A popular hosting service optimized for Next.js, with one-click deployments and global content delivery.
-  - Automatically rebuilds and deploys the site whenever code is pushed to the main branch.
-- **GitHub Actions (CI/CD)**
-  - Automates tasks like linting (ESLint), formatting (Prettier), and running any tests you add.
-  - Ensures that only clean, tested code goes live.
+- **Version Control: GitHub**
+  - All code lives in a shared repository, allowing multiple developers to work together, review changes, and track history.
+- **CI/CD Pipeline: GitHub Actions**
+  - Automatically runs tests and builds the project on each code change. If everything passes, it can deploy updates to a staging or production environment without manual steps.
+- **Hosting Platform: Vercel**
+  - Optimized for Next.js apps and serverless functions. Automatically deploys from GitHub, handles global content delivery (CDN), and scales as traffic grows.
+- **Monorepo Architecture**
+  - Organizes shared code (UI components, utility functions) in one place, making it easy to maintain and reuse across features.
 
-Together, these tools provide a reliable, scalable setup where every code change is tested and deployed quickly, with minimal manual work.
+This infrastructure setup guarantees that new features are tested, reviewed, and deployed quickly—reducing downtime and keeping the platform reliable.
 
-## 4. Third-Party Integrations
-While this starter kit is minimal by design, it already includes or can easily add:
+## Third-Party Integrations
 
-- **bcrypt**
-  - For secure password hashing (included as an npm dependency).
-- **NextAuth.js** (optional)
-  - A full-featured authentication library supporting email/password, OAuth, and more.
-- **Sentry or LogRocket** (optional)
-  - For real-time error tracking and performance monitoring in production.
+- **Email Service (e.g., SendGrid or Mailgun)**
+  - Sends notification emails when quizzes are assigned or completed, keeping respondents and managers informed.
+- **CSV Parser**
+  - Allows managers to upload large lists of respondents in bulk, streamlining the assignment process.
+- **Analytics & Charting Tools**
+  - Recharts (or similar) powers the line graphs and dashboards used in the Manager and Executive views.
+- **Logging & Error Tracking (e.g., Sentry)**
+  - Captures runtime errors and performance data, helping developers find and fix issues before they affect users.
 
-These integrations help extend the app’s capabilities without building every feature from scratch.
+These integrations enrich the platform’s functionality, making tasks like bulk uploads, notifications, and error monitoring seamless.
 
-## 5. Security and Performance Considerations
-We’ve baked in several measures to keep users safe and the app running smoothly:
+## Security and Performance Considerations
 
-Security:
-- Passwords are never stored in plain text—bcrypt hashes them with a random salt.
-- API routes can implement CSRF protection and input validation to block malicious requests.
-- Session tokens or cookies are marked secure and HttpOnly to prevent theft via JavaScript.
+- **Authentication & Role-Based Access Control (RBAC)**
+  - Better Auth combined with custom middleware ensures that only the right people see certain pages. For example, only Admins can manage users, and only Respondents can take quizzes.
+- **Data Protection**
+  - All sensitive data (passwords, personal details) is encrypted both in transit (HTTPS) and at rest (database encryption).
+- **Error Handling & Boundaries**
+  - Next.js error boundaries display user-friendly messages when something goes wrong, avoiding confusing crash screens.
+- **Server-Side Rendering & Caching**
+  - Key pages (dashboards, analytics) are rendered on the server, reducing the amount of code the browser needs to download and run. We also cache frequent queries to speed up repeat views.
+- **Code Splitting & Lazy Loading**
+  - Only the needed JavaScript for each page is sent to the browser, minimizing initial load times and improving mobile performance.
+- **Type Checking**
+  - TypeScript enforces data shapes and API contracts at build time, catching errors before deployment.
 
-Performance:
-- Server-side rendering (SSR) and static site generation (SSG) in Next.js deliver pages faster.
-- Code splitting and lazy-loaded components ensure users only download what they need.
-- Global CSS and theme files are small and cached by the browser for quick repeat visits.
+Together, these measures ensure the platform remains secure, fast, and reliable—even as usage grows.
 
-These strategies work together to give users a fast, secure experience every time.
+## Conclusion and Overall Tech Stack Summary
 
-## 6. Conclusion and Overall Tech Stack Summary
-In building **codeguide-starter**, we chose technologies that:
+By combining these carefully chosen technologies, the Blackcod Group Insight Quizzing Platform MVP achieves its goals:
 
-- Align with modern web standards (Next.js, React, TypeScript).
-- Provide a clear, file-based project structure for rapid onboarding.
-- Offer built-in support for server-side rendering, API routes, and static assets.
-- Emphasize security through password hashing, session management, and safe defaults.
-- Enable easy scaling and future enhancements via modular code and optional integrations.
+- A **modern, responsive** frontend powered by Next.js, React, and Tailwind CSS for a smooth quiz and analytics experience.
+- A **robust, secure** backend using Better Auth, Drizzle ORM, and PostgreSQL to manage users, content, and data reliably.
+- An **automated, scalable** infrastructure on GitHub, GitHub Actions, and Vercel to ensure rapid, safe deployments and high availability.
+- Seamless **third-party integrations** for email notifications, bulk CSV uploads, and interactive charts, enhancing productivity and insights.
+- Strong **security**, **access control**, and **performance** optimizations that keep user data safe and interfaces fast.
 
-This stack strikes a balance between simplicity for newcomers and flexibility for experienced teams. It accelerates development of a secure authentication flow and a polished dashboard, while leaving room to plug in databases, test suites, and advanced features as the project grows.
+This tech stack not only meets the functional and non-functional requirements but also lays a solid foundation for future growth—adding features, supporting more users, and delivering deeper insights for Blackcod Group stakeholders.
