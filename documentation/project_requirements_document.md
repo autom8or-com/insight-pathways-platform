@@ -1,3 +1,5 @@
+# Project Requirements Document
+
 # Project Requirements Document (PRD)
 
 ## 1. Project Overview
@@ -94,3 +96,17 @@ When a Manager creates a quiz, they open the Content tab, build questions with i
 **Mitigation Guidelines**: Use incremental rollouts, feature flags for new modules, thorough logging. Ensure clear user error messages and fallback UI for data-fetch failures.
 
 *This PRD serves as the definitive source for all future technical documents—Tech Stack, Frontend Guidelines, Backend Structure, and Automated Workflows—ensuring zero ambiguity for an AI-driven development process.*
+<<<<<<< Updated upstream
+=======
+
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: 56a7f958-8e2c-4c22-9d6e-2384f8e6056e
+- **Type**: custom
+- **Custom Type**: project_requirements_document
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:19:43.055Z
+- **Last Updated**: 2025-10-17T11:21:17.162Z
+>>>>>>> Stashed changes

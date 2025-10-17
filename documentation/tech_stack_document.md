@@ -1,5 +1,7 @@
 # Tech Stack Document
 
+# Tech Stack Document
+
 This document outlines the technology choices made for the **Blackcod Group Insight Quizzing Platform MVP**. It explains, in everyday language, why each tool or framework was selected and how it contributes to a smooth, reliable experience for both users and developers.
 
 ## Frontend Technologies
@@ -90,3 +92,13 @@ By combining these carefully chosen technologies, the Blackcod Group Insight Qui
 - Strong **security**, **access control**, and **performance** optimizations that keep user data safe and interfaces fast.
 
 This tech stack not only meets the functional and non-functional requirements but also lays a solid foundation for future growth—adding features, supporting more users, and delivering deeper insights for Blackcod Group stakeholders.
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: 1980b110-d37e-4981-8ed9-7fb9fe4dfbed
+- **Type**: custom
+- **Custom Type**: tech_stack_document
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:21:29.334Z
+- **Last Updated**: N/A

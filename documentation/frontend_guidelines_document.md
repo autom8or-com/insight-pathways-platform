@@ -1,3 +1,5 @@
+# Frontend Guidelines Document
+
 # Frontend Guideline Document for Blackcod Group Insight Quizzing Platform
 
 This document outlines the frontend setup, design principles, and technologies used in the Insight Quizzing Platform MVP. It’s written in everyday language so anyone—technical or not—can understand how the frontend is organized and why it’s built this way.
@@ -101,3 +103,13 @@ This guideline lays out a clear, scalable, and maintainable frontend for the Ins
 • **Performance & Testing:** SSR, code splitting, comprehensive test suite, CI/CD pipeline
 
 By following these principles and structures, the team can deliver an enterprise-grade, high-performance quizzing platform that meets all user needs and technical requirements.
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: 3649c207-38f9-4a75-884b-5a549c0f1b26
+- **Type**: custom
+- **Custom Type**: frontend_guidelines_document
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:22:01.838Z
+- **Last Updated**: N/A

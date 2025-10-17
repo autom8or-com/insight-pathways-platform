@@ -1,3 +1,5 @@
+# App Flowchart
+
 flowchart TD
   A[Start] --> B[Login Page]
   B --> C{Authenticated}
@@ -19,3 +21,13 @@ flowchart TD
   Q --> R[Insight Pathways]
   H --> S[Manage Users]
   H --> T[Manage Roles]
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: e597ff58-85c9-4c90-a8c7-281ff7cece68
+- **Type**: custom
+- **Custom Type**: app_flowchart
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:20:46.408Z
+- **Last Updated**: 2025-10-17T11:19:49.456Z

@@ -1,5 +1,7 @@
 # App Flow Document
 
+# App Flow Document
+
 ## Onboarding and Sign-In/Sign-Up
 
 A new user arrives at the platform by visiting the public landing page, which briefly presents the purpose of the Insight Quizzing Platform and includes links to log in or sign up. When the user clicks "Sign Up," they land on a registration page where they enter their name, company email, and a password. The system validates the email format in real time and checks password strength before allowing submission. After submitting the form, the user receives an email confirmation link. Clicking that link activates their account and redirects them to the sign-in page. Existing users click "Sign In," enter their registered email and password, and submit. If the credentials match, the system issues a session token and sends the user to their role-specific dashboard. On the sign-in page, a "Forgot Password" link takes users to a recovery form where they enter their email. The platform sends a one-time reset link that leads to a secure page for choosing a new password. After resetting, the user can sign in with the new password. A "Sign Out" button is persistently available in the header or sidebar; clicking it ends the session and returns the user to the public landing page.
@@ -29,3 +31,17 @@ If a user enters incorrect credentials at sign-in, the login form shows an inlin
 ## Conclusion and Overall App Journey
 
 In summary, a new user visits the landing page and signs up with email and password, confirms their account, and signs in. Based on their role, they see a clear, role-specific dashboard with navigation to all relevant features. Managers create, schedule, and publish quizzes, upload respondent lists, and review analytics. Respondents view their assigned quizzes, complete timed assessments, and receive feedback. Executives explore high-level reports and Insight Pathways visualizations. Admins manage users, roles, and permissions. Throughout the experience, settings allow profile and notification updates, and robust error handling guides users through any issues. The platform flow seamlessly connects each page, ensuring users can move from sign-up to content creation or quiz completion without confusion or dead ends.
+<<<<<<< Updated upstream
+=======
+
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: b3643cf0-8315-4637-b971-f457d4b56b47
+- **Type**: custom
+- **Custom Type**: app_flow_document
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:20:36.399Z
+- **Last Updated**: 2025-10-17T11:19:45.948Z
+>>>>>>> Stashed changes
