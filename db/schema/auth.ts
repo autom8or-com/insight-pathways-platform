@@ -1,5 +1,8 @@
 import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
+export const roleEnum = ["admin", "manager", "respondent", "executive"] as const;
+export type UserRole = typeof roleEnum[number];
+
 export const user = pgTable("user", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
@@ -8,6 +11,7 @@ export const user = pgTable("user", {
         .$defaultFn(() => false)
         .notNull(),
     image: text("image"),
+    role: text("role").$type<UserRole>().default("respondent").notNull(),
     createdAt: timestamp("created_at")
         .$defaultFn(() => /* @__PURE__ */ new Date())
         .notNull(),

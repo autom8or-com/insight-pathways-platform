@@ -160,6 +160,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "/codeguide-logo.png",
   }
 
+  // Filter navigation items based on user role
+  const userRole = session?.user?.role
+  const hasManagerAccess = ['manager', 'executive', 'admin'].includes(userRole || '')
+  
+  // Add AI Insights to main navigation for authorized roles
+  const navMainWithAI = hasManagerAccess ? [
+    ...staticData.navMain.slice(0, 3), // Dashboard, Lifecycle, Analytics
+    {
+      title: "AI Insights",
+      url: userRole === 'executive' ? "/dashboard/executive/ai-chat" : "/dashboard/manager/ai-chat",
+      icon: IconFileAi,
+    },
+    ...staticData.navMain.slice(3) // Projects, Team
+  ] : staticData.navMain
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -178,7 +193,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={staticData.navMain} />
+        <NavMain items={navMainWithAI} />
         <NavDocuments items={staticData.documents} />
         <NavSecondary items={staticData.navSecondary} className="mt-auto" />
       </SidebarContent>

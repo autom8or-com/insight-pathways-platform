@@ -1,179 +1,254 @@
 # Backend Structure Document
 
-This document outlines the backend architecture, hosting, and infrastructure for the **codeguide-starter** project. It uses plain language so anyone can understand how the backend is set up and how it supports the application.
+# Backend Structure Document
+
+This document outlines the backend architecture, database management, APIs, hosting, infrastructure, security, and monitoring strategies for the Blackcod Group Insight Quizzing Platform. It uses clear, everyday language so anyone can understand how the backend is built and how it all works together.
 
 ## 1. Backend Architecture
 
-- **Framework and Design Pattern**
-  - We use **Next.js API Routes** to handle all server-side logic. These routes live alongside the frontend code in the same repository, making development and deployment simpler.
-  - The backend follows a **layered pattern**:
-    1. **API Layer**: Receives requests (login, registration, data fetch).  
-    2. **Service Layer**: Contains the core business logic (user validation, password hashing).  
-    3. **Data Access Layer**: Talks to the database via a simple ORM (e.g., Prisma or TypeORM).
+Overall, the backend is built with modern, serverless principles in mind. It uses Next.js API routes and server components to keep things fast and easy to maintain.
 
-- **Scalability**
-  - Stateless API routes can scale horizontally—new instances can spin up on demand.  
-  - We can add caching or a message queue (e.g., Redis or RabbitMQ) without changing the core code.
+• Frameworks and patterns:
+  - **Next.js (App Router)**: Provides server-side rendering, server components, and API routes in a single codebase.
+  - **Serverless functions**: Each API route scales automatically, so we don’t have to manage servers.
+  - **Drizzle ORM**: A lightweight, TypeScript-friendly ORM for talking to our SQL database.
+  - **Better Auth**: Handles user sign-up, sign-in, sessions, and role checks.
 
-- **Maintainability**
-  - Code for each feature is grouped by route (authentication, dashboard).  
-  - A service layer separates complex logic from request handling.
-
-- **Performance**
-  - Lightweight Node.js handlers keep response times low.  
-  - Future use of database connection pooling and Redis for caching repeated queries.
+• How it supports our goals:
+  - **Scalability**: Serverless functions scale up or down based on traffic without manual intervention.
+  - **Maintainability**: TypeScript and Drizzle ORM enforce types and help catch bugs early. Code is organized by feature.
+  - **Performance**: Server components fetch data on the server, minimizing the JavaScript sent to the browser. Responses are cached at the edge when possible.
 
 ## 2. Database Management
 
-- **Database Choice**
-  - We recommend **PostgreSQL** for structured data and reliable transactions.  
-  - In-memory caching can be added later with **Redis** for session tokens or frequently read data.
+We use a traditional SQL database because quiz data and user roles fit well into tables with clear relationships.
 
-- **Data Storage and Access**
-  - Use an ORM like **Prisma** or **TypeORM** to map JavaScript/TypeScript objects to database tables.
-  - Connection pooling ensures efficient use of database connections under load.
-  - Migrations track schema changes over time, keeping development, staging, and production in sync.
+• Database technology:
+  - **Type**: Relational (SQL)
+  - **System**: PostgreSQL (managed by a cloud provider like AWS RDS or Supabase)
 
-- **Data Practices**
-  - Passwords are never stored in plain text—they are salted and hashed with **bcrypt** before saving.
-  - All outgoing data is typed and validated to prevent malformed records.
+• Data handling practices:
+  - **Drizzle ORM** handles migrations, schema definitions, and queries in TypeScript.
+  - **Backups**: Automated daily backups and point-in-time recovery.
+  - **Indexes**: Created on foreign keys and frequently filtered fields to speed up queries (e.g., `user_id`, `quiz_id`).
+  - **Connection pooling**: Managed by the cloud provider or a pooler like PgBouncer for efficient use of database connections.
 
 ## 3. Database Schema
 
-### Human-Readable Format
+Below is a human-friendly overview of our main tables and their relationships, followed by SQL definitions.
 
-- **Users**
-  - **id**: Unique identifier  
-  - **email**: User’s email address (unique)  
-  - **password_hash**: Securely hashed password  
-  - **created_at**: Account creation timestamp
+Tables and relationships:
+- **Users**: Stores every person who can log in (respondents, managers, admins, executives).
+- **Roles**: Defines each role (Admin, Manager, Respondent, Executive).
+- **Teams**: Groups of respondents; managers oversee teams.
+- **Quizzes**: High-level quiz or survey objects created by managers.
+- **Questions**: Each quiz has multiple questions.
+- **Assignments**: Links quizzes to teams or individuals, with deadlines.
+- **Submissions**: Records of respondents’ answers and scores.
 
-- **Sessions**
-  - **id**: Unique session record  
-  - **user_id**: Links to a user  
-  - **token**: Random string for authentication  
-  - **expires_at**: When the token stops working  
-  - **created_at**: When the session was created
+SQL schema (PostgreSQL):
 
-- **DashboardItems** *(optional for dynamic data)*
-  - **id**: Unique record  
-  - **title**: Item title  
-  - **content**: Item details  
-  - **created_at**: When the item was added
-
-### SQL Schema (PostgreSQL)
 ```sql
--- Users table
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL
+);
+
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role_id INTEGER NOT NULL REFERENCES roles(id),
+  team_id INTEGER REFERENCES teams(id),
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Sessions table
-CREATE TABLE sessions (
+CREATE TABLE teams (
   id SERIAL PRIMARY KEY,
-  user_id INT REFERENCES users(id) ON DELETE CASCADE,
-  token VARCHAR(255) UNIQUE NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
+  name TEXT NOT NULL,
+  manager_id INTEGER REFERENCES users(id)
 );
 
--- Dashboard items table
-CREATE TABLE dashboard_items (
+CREATE TABLE quizzes (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
-  content TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
+  description TEXT,
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  published_at TIMESTAMP
 );
-```  
+
+CREATE TABLE questions (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id),
+  text TEXT NOT NULL,
+  type TEXT NOT NULL,           -- e.g., "multiple-choice", "text"
+  metadata JSONB,
+  position INTEGER NOT NULL     -- order within the quiz
+);
+
+CREATE TABLE assignments (
+  id SERIAL PRIMARY KEY,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id),
+  assignee_team_id INTEGER REFERENCES teams(id),
+  assignee_user_id INTEGER REFERENCES users(id),
+  due_date TIMESTAMP NOT NULL,
+  assigned_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE submissions (
+  id SERIAL PRIMARY KEY,
+  assignment_id INTEGER NOT NULL REFERENCES assignments(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  submitted_at TIMESTAMP DEFAULT NOW(),
+  answers JSONB,
+  score INTEGER
+);
+```
 
 ## 4. API Design and Endpoints
 
-- **Approach**: We follow a **RESTful** style, grouping related endpoints under `/api` directories.
+The platform uses RESTful endpoints implemented as Next.js API routes. Each endpoint is protected by role-based checks.
 
-- **Key Endpoints**
-  - `POST /api/auth/register`  
-    • Accepts `{ email, password }`  
-    • Creates a new user and issues a session token  
-  - `POST /api/auth/login`  
-    • Accepts `{ email, password }`  
-    • Verifies credentials and returns a session token  
-  - `POST /api/auth/logout`  
-    • Invalidates the session token on the server  
-  - `GET /api/dashboard/data`  
-    • Requires a valid session  
-    • Returns user-specific data or dashboard items  
+Key endpoints:
 
-- **Communication**
-  - Frontend sends JSON requests; backend replies with JSON and appropriate HTTP status codes.  
-  - Protected routes check for a valid session token (in cookies or Authorization header).
+• `POST /api/auth/signup`  
+  Purpose: Register a new user.  
+  Input: email, password, desired role.  
+  Output: Success message or error.
+
+• `POST /api/auth/login`  
+  Purpose: Log in an existing user.  
+  Input: email, password.  
+  Output: Session token and user info.
+
+• `GET /api/users/me`  
+  Purpose: Fetch the current user’s profile and role.  
+  Protection: Authenticated users.
+
+• `GET /api/quizzes`  
+  Purpose: List quizzes visible to the user.  
+  Protection: Managers see their quizzes; respondents see assigned quizzes.
+
+• `POST /api/quizzes`  
+  Purpose: Create a new quiz.  
+  Protection: Managers and Admins only.
+
+• `PUT /api/quizzes/:id`  
+  Purpose: Update quiz details or publish it.  
+  Protection: Managers (who own the quiz) or Admins.
+
+• `POST /api/quizzes/:id/questions`  
+  Purpose: Add questions to a quiz.  
+  Protection: Managers only.
+
+• `POST /api/assignments`  
+  Purpose: Assign quizzes to teams or users.  
+  Protection: Managers only.
+
+• `GET /api/assignments/:id/submissions`  
+  Purpose: Fetch submissions and scores for a given assignment.  
+  Protection: Managers and Admins.
+
+• `POST /api/submissions`  
+  Purpose: Submit answers for a quiz.  
+  Protection: Respondents only.
+
+• `GET /api/analytics/overview`  
+  Purpose: Provide high-level metrics (completion rates, average scores).  
+  Protection: Managers and Executives.
+
+• `GET /api/analytics/pathways`  
+  Purpose: Return time-based response trends for Insight Pathways.  
+  Protection: Managers and Executives.
 
 ## 5. Hosting Solutions
 
-- **Cloud Provider**:  
-  - **Vercel** (recommended) offers seamless Next.js deployments, auto-scaling, and built-in CDN.  
-  - Alternatively, **Netlify** or any Node.js-capable host will work.
+We leverage a cloud-first, serverless-friendly environment to keep operations simple and costs proportional to usage.
 
-- **Benefits**
-  - **Reliability**: Global servers and failover across regions.  
-  - **Scalability**: Auto-scale serverless functions based on traffic.  
-  - **Cost-Effectiveness**: Pay-per-use model means low cost for small projects.
+• **Vercel** for hosting the Next.js backend:
+  - Built-in support for API routes and serverless functions.
+  - Global edge network for fast responses to users worldwide.
+  - Automatic deployments from GitHub with previews.
+
+• **PostgreSQL** hosted on **AWS RDS** (or Supabase):
+  - Fully managed, automated backups and scaling.
+  - High availability option with multi-AZ.
+
+Benefits:
+  - **Reliability**: SLAs and automatic failover.
+  - **Scalability**: Automatic scaling of serverless functions and database.
+  - **Cost-effectiveness**: Pay only for what you use, with free tiers for early-stage development.
 
 ## 6. Infrastructure Components
 
-- **Load Balancer**
-  - Provided by the hosting platform—distributes API requests across function instances.
+These pieces work together to deliver a fast, resilient experience.
 
-- **CDN (Content Delivery Network)**
-  - Vercel’s global edge network caches static assets (CSS, JS, images) for faster page loads.
+• **Load Balancer / Edge Network** (Vercel CDN):
+  - Distributes incoming requests to the nearest edge location.
+  - Caches static content and SSR pages close to users.
 
-- **Caching**
-  - **Redis** (optional) for session storage or caching dashboard queries to reduce database load.
+• **Caching mechanisms**:
+  - **Edge caching** for public API responses (e.g., quiz lists).
+  - **In-memory cache** (optional Redis) for heavy analytics queries.
 
-- **Object Storage**
-  - For file uploads or backups, integrate with AWS S3 or similar services.
+• **Database connection pool**:
+  - Managed by PgBouncer or the cloud provider to reuse database connections.
 
-- **Message Queue**
-  - In future, use **RabbitMQ** or **Kafka** for background tasks (e.g., email notifications).
+• **CI/CD pipeline** (GitHub Actions):
+  - Runs tests on every pull request.
+  - Deploys to a staging environment automatically.
+  - Promotes to production after approval.
 
 ## 7. Security Measures
 
-- **Authentication & Authorization**
-  - Passwords hashed with **bcrypt** and salted.  
-  - Session tokens stored in secure, HttpOnly cookies or Authorization headers.  
-  - Protected endpoints verify tokens before proceeding.
+Security is baked in at every layer to protect user data and comply with regulations.
 
-- **Data Encryption**
-  - **HTTPS/TLS** encrypts data in transit.  
-  - Database connections use SSL to encrypt data between the app and the database.
+• **Authentication & Authorization**:
+  - **Better Auth** provides secure sign-up, login, and session management.
+  - **Role-Based Access Control (RBAC)**: Implemented in `lib/auth.ts` and Next.js middleware to guard API routes and pages.
 
-- **Input Validation**
-  - Every incoming request is validated (e.g., valid email format, password length) to prevent SQL injection or other attacks.
+• **Data encryption**:
+  - **TLS** for all in-transit data.
+  - **Encryption at rest** for database storage.
 
-- **Web Security Best Practices**
-  - Enable **CORS** policies to limit allowed origins.  
-  - Use **CSRF tokens** or same-site cookies to prevent cross-site requests.  
-  - Set secure headers with **Helmet** or a similar middleware.
+• **Environment variables**:
+  - No secrets in code. Use Vercel’s or AWS’s secret stores.
+
+• **Input validation & sanitization**:
+  - All API inputs are validated in handlers to prevent SQL injection and XSS.
+
+• **Audit logging**:
+  - Key actions (quiz creation, assignments, role changes) are logged for compliance.
 
 ## 8. Monitoring and Maintenance
 
-- **Performance Monitoring**
-  - Integrate **Sentry** or **LogRocket** for real-time crash reporting and performance tracing.  
-  - Use Vercel’s built-in analytics to track request latencies and error rates.
+Keeping an eye on performance and errors ensures the platform stays healthy.
 
-- **Logging**
-  - Structured logs (JSON) for all API requests and errors, shipped to a log management service like **Datadog** or **Logflare**.
+• **Monitoring tools**:
+  - **Vercel Analytics** for request latency and error rates.
+  - **Sentry** (or similar) for real-time error tracking in API routes.
+  - **CloudWatch** (if using AWS) for database metrics.
 
-- **Health Checks**
-  - Define a `/health` endpoint that returns a 200 status if the service is up and the database is reachable.
+• **Logging**:
+  - Structured logs from API routes, accessible via Vercel’s dashboard.
+  - Central log storage for long-term analysis.
 
-- **Maintenance Strategies**
-  - Automated migrations run on deploy to keep the database schema up to date.  
-  - Scheduled dependency audits and security scans (e.g., `npm audit`).
-  - Regular backups of the database (daily or weekly depending on usage).
+• **Maintenance practices**:
+  - **Database migrations** managed by Drizzle CLI; run as part of CI/CD.
+  - **Dependency updates** reviewed weekly for security patches.
+  - **Automated backups** tested quarterly to ensure restore procedures work.
 
 ## 9. Conclusion and Overall Backend Summary
 
-The backend for **codeguide-starter** is built on Next.js API Routes and Node.js, paired with PostgreSQL for data and optional Redis for caching. It follows a clear layered architecture that keeps code easy to maintain and extend. With RESTful endpoints for authentication and data, secure practices like password hashing and HTTPS, and hosting on Vercel for scalability and global performance, this setup meets the project’s goals for a fast, secure, and developer-friendly foundation. Future enhancements—such as background job queues, advanced monitoring, or richer data models—can be added without disrupting the core structure.
+The backend for the Blackcod Group Insight Quizzing Platform is built on a serverless, scalable foundation using Next.js, Drizzle ORM, and PostgreSQL. Better Auth ensures secure user management and RBAC. Hosting on Vercel and AWS RDS delivers reliability and global reach at a reasonable cost. Caching at the edge, a solid CI/CD pipeline, and robust monitoring keep performance high and issues low. All these components work in harmony to meet the project’s goals of a fast, secure, and maintainable quizzing and analytics platform.
+
+---
+**Document Details**
+- **Project ID**: 670e52ca-d96e-4055-8d23-de8ffa92eaae
+- **Document ID**: 5ac31ff0-c192-41f0-80f7-e5eef934fade
+- **Type**: custom
+- **Custom Type**: backend_structure_document
+- **Status**: completed
+- **Generated On**: 2025-10-17T10:20:14.669Z
+- **Last Updated**: N/A
